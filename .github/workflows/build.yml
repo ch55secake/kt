@@ -1,0 +1,37 @@
+name: Build and test
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    paths:
+      - src/**
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check
+        run: cargo check
+      - name: Build
+        run: cargo build
+      - name: Run tests
+        run: cargo test
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@nightly
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Clippy check
+        run: cargo clippy --all-targets --all-features --workspace -- -D warnings
