@@ -1,13 +1,12 @@
+use crate::app::App;
+use ratatui::backend::Backend;
 use ratatui::{
     Frame,
-    backend::Backend,
     layout::{Alignment, Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph},
 };
-
-use crate::app::App;
 
 pub fn fixed_width(s: &str, width: u16) -> String {
     let len = s.len() as u16;
@@ -25,7 +24,7 @@ pub fn fixed_width(s: &str, width: u16) -> String {
 }
 
 pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
-    let size = f.size();
+    let size = f.area();
 
     let chunks = if app.command_mode {
         Layout::default()
@@ -85,7 +84,6 @@ pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
 
     let mut items: Vec<ListItem> = Vec::new();
 
-    // Header row with columns
     let header_line = Line::from(vec![
         Span::styled(
             fixed_width("Name", col_name),
@@ -118,7 +116,7 @@ pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
     }
 
     let mut list_state = ListState::default();
-    list_state.select(Some(app.selected_index + 1)); // +1 because header is first row
+    list_state.select(Some(app.selected_index + 1));
 
     let list = List::new(items)
         .block(Block::default().borders(Borders::LEFT | Borders::RIGHT | Borders::BOTTOM))
@@ -140,7 +138,6 @@ pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
         f.render_widget(input, chunks[1]);
     }
 
-    // Help popup
     if app.show_help {
         let help_lines = vec![
             Line::from("Help:"),
