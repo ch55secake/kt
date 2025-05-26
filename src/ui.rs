@@ -8,21 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph},
 };
 
-pub fn fixed_width(s: &str, width: u16) -> String {
-    let len = s.len() as u16;
-    if len == width {
-        s.to_string()
-    } else if len > width {
-        s.chars().take(width as usize).collect()
-    } else {
-        let mut result = s.to_string();
-        for _ in 0..(width - len) {
-            result.push(' ');
-        }
-        result
-    }
-}
-
+#[allow(clippy::extra_unused_type_parameters)]
 pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
@@ -84,36 +70,10 @@ pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
 
     let mut items: Vec<ListItem> = Vec::new();
 
-    let header_line = Line::from(vec![
-        Span::styled(
-            fixed_width("Name", col_name),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-        Span::raw(" "),
-        Span::styled(
-            fixed_width("Status", col_status),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-        Span::raw(" "),
-        Span::styled(
-            fixed_width("Age", col_age),
-            Style::default().add_modifier(Modifier::BOLD),
-        ),
-    ]);
+    let header_line = create_header(col_name, col_status, col_age);
     items.push(ListItem::new(header_line).style(Style::default().fg(Color::Gray)));
 
-    for item in app.items() {
-        let status = "Running";
-        let age = "5m";
-        let line = Line::from(vec![
-            Span::raw(fixed_width(item, col_name)),
-            Span::raw(" "),
-            Span::raw(fixed_width(status, col_status)),
-            Span::raw(" "),
-            Span::raw(fixed_width(age, col_age)),
-        ]);
-        items.push(ListItem::new(line));
-    }
+    build_columns_from_items(app, col_name, col_status, col_age, &mut items);
 
     let mut list_state = ListState::default();
     list_state.select(Some(app.selected_index + 1));
@@ -130,35 +90,10 @@ pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
     f.render_stateful_widget(list, list_area, &mut list_state);
 
     if app.command_mode {
-        let input = Paragraph::new(Line::from(vec![Span::styled(
-            format!(":{}", app.command_input),
-            Style::default().fg(Color::LightBlue),
-        )]))
-        .block(Block::default().borders(Borders::ALL).title("Command"));
-        f.render_widget(input, chunks[1]);
+        f.render_widget(create_command_palette_widget(app), chunks[1]);
     }
 
     if app.show_help {
-        let help_lines = vec![
-            Line::from("Help:"),
-            Line::from("  q - Quit"),
-            Line::from("  Left/Right - Switch page"),
-            Line::from("  Up/Down - Move selection"),
-            Line::from("  / - Enter command mode"),
-            Line::from("  ? - Toggle help"),
-            Line::from(""),
-            Line::from("Commands (type after / and press Enter):"),
-            Line::from("  pods"),
-            Line::from("  deployments"),
-            Line::from("  services"),
-            Line::from(""),
-            Line::from("Press ? again to close this help."),
-        ];
-        let help = Paragraph::new(help_lines)
-            .block(Block::default().borders(Borders::ALL).title("Help"))
-            .alignment(Alignment::Left)
-            .wrap(ratatui::widgets::Wrap { trim: true });
-
         let area = Rect {
             x: size.width / 6,
             y: size.height / 6,
@@ -166,6 +101,114 @@ pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
             height: size.height * 2 / 3,
         };
         f.render_widget(Clear, area);
-        f.render_widget(help, area);
+        f.render_widget(create_help_popup(), area);
     }
+}
+
+/// Create the actual help popup
+fn create_help_popup() -> Paragraph<'static> {
+    Paragraph::new(create_help_info())
+        .block(Block::default().borders(Borders::ALL).title("Help"))
+        .alignment(Alignment::Left)
+        .wrap(ratatui::widgets::Wrap { trim: true })
+}
+
+/// Create header line that in has Name, Status and Age
+fn create_header(col_name: u16, col_status: u16, col_age: u16) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(
+            fixed_width("Name", col_name),
+            Style::default().add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" "),
+        Span::styled(
+            fixed_width("Status", col_status),
+            Style::default().add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" "),
+        Span::styled(
+            fixed_width("Age", col_age),
+            Style::default().add_modifier(Modifier::BOLD),
+        ),
+    ])
+}
+
+/// Set fixed width of each column
+fn fixed_width(s: &str, width: u16) -> String {
+    let len = s.len() as u16;
+    if len == width {
+        s.to_string()
+    } else if len > width {
+        s.chars().take(width as usize).collect()
+    } else {
+        let mut result = s.to_string();
+        for _ in 0..(width - len) {
+            result.push(' ');
+        }
+        result
+    }
+}
+
+/// Build the columns from the items that the app has, e.g: the pods defined
+fn build_columns_from_items(
+    app: &mut App,
+    col_name: u16,
+    col_status: u16,
+    col_age: u16,
+    items: &mut Vec<ListItem>,
+) {
+    for item in app.items() {
+        let status = "Running";
+        let age = "5m";
+        let line = Line::from(vec![
+            Span::raw(fixed_width(item, col_name)),
+            Span::raw(" "),
+            Span::raw(fixed_width(status, col_status)),
+            Span::raw(" "),
+            Span::raw(fixed_width(age, col_age)),
+        ]);
+        items.push(ListItem::new(line));
+    }
+}
+
+/// Create the command palette widget and pass through the mutable app
+fn create_command_palette_widget(app: &mut App) -> Paragraph {
+    Paragraph::new(Line::from(vec![Span::styled(
+        format!(":{}", app.command_input),
+        Style::default().fg(Color::LightBlue),
+    )]))
+    .block(Block::default().borders(Borders::ALL).title("Command"))
+}
+
+/// Create text within help panes divided into lines
+fn create_help_info() -> Vec<Line<'static>> {
+    vec![
+        Line::from("Help:"),
+        Line::from("  q - Quit"),
+        Line::from("  Left/Right - Switch page"),
+        Line::from("  Up/Down - Move selection"),
+        Line::from("  / - Enter command mode"),
+        Line::from("  ? - Toggle help"),
+        Line::from(""),
+        Line::from("Commands (type after / and press Enter):"),
+        Line::from("  pods"),
+        Line::from("  deployments"),
+        Line::from("  services"),
+        Line::from(""),
+        Line::from("Press ? again to close this help."),
+    ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fixed_width() {}
+
+    #[test]
+    fn test_create_command_palette_widget() {}
+
+    #[test]
+    fn test_build_columns_from_items() {}
 }
