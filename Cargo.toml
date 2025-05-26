@@ -1,0 +1,10 @@
+[package]
+name = "kt"
+version = "0.1.0"
+edition = "2024"
+readme = "README.md"
+description = "A kubernetes terminal viewer"
+
+[dependencies]
+crossterm = "0.29.0"
+ratatui = "0.29.0"
