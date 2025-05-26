@@ -8,6 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph},
 };
 
+#[allow(clippy::extra_unused_type_parameters)]
 pub fn draw<B: Backend>(f: &mut Frame, app: &mut App) {
     let size = f.area();
 
@@ -196,4 +197,18 @@ fn create_help_info() -> Vec<Line<'static>> {
         Line::from(""),
         Line::from("Press ? again to close this help."),
     ]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_fixed_width() {}
+
+    #[test]
+    fn test_create_command_palette_widget() {}
+
+    #[test]
+    fn test_build_columns_from_items() {}
 }

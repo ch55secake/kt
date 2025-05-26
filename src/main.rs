@@ -42,7 +42,7 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>) -> io::Resu
     loop {
         terminal.draw(|f| draw::<B>(f, &mut app))?;
 
-        if event::poll(std::time::Duration::from_millis(10))? {
+        if event::poll(std::time::Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
                 if app.command_mode {
                     handle_command_palette_input(&mut app, key);
@@ -53,9 +53,10 @@ fn run_app<B: ratatui::backend::Backend>(terminal: &mut Terminal<B>) -> io::Resu
                     }
                 }
             }
-            if let Event::Mouse(mouse) = event::read()? {
-                handle_mouse_nav(&mut app, mouse);
-            }
+            // TODO: this fucking annihilates everything
+            // if let Event::Mouse(mouse) = event::read()? {
+            //     handle_mouse_nav(&mut app, mouse);
+            // }
         }
     }
 }
